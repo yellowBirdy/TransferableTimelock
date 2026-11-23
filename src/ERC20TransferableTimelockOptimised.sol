@@ -42,6 +42,7 @@ contract ERC20TransferableTimelockOptimised is ERC20 {
         return balanceOf(account) - timelockedBalanceOf(account);
     }
 
+    /// @dev Locked amounts above 2^200 are truncated when packed into the slot.
     function _setTimelock(address account, uint256 amount) private {
         assembly ("memory-safe") {
             mstore(0x0c, _TIMELOCKS_SLOT_SEED)

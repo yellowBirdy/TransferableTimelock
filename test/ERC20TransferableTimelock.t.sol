@@ -47,6 +47,23 @@ abstract contract ERC20TransferableTimelockTestBase is Test {
         assertEq(token.balanceOf(BOB), 120);
     }
 
+    function test_TransferFromUsesTheSameTimelockAccounting() public {
+        token.mint(ALICE, 70);
+        vm.roll(block.number + 1);
+        token.mint(ALICE, 30);
+
+        vm.prank(ALICE);
+        assertTrue(token.approve(BOB, 80));
+
+        vm.prank(BOB);
+        assertTrue(token.transferFrom(ALICE, CAROL, 80));
+
+        assertEq(token.balanceOf(ALICE), 20);
+        assertEq(token.timelockedBalanceOf(ALICE), 20);
+        assertEq(token.balanceOf(CAROL), 80);
+        assertEq(token.timelockedBalanceOf(CAROL), 10);
+    }
+
     function test_BurnRevertsWhenItConsumesRestrictedBalance() public {
         token.mint(ALICE, 100);
 
