@@ -1,6 +1,6 @@
-# ERC20LiquidTimelock
+# ERC20TransferableTimelock
 
-ERC20LiquidTimelock is a reusable ERC-20 pattern for making newly minted tokens
+ERC20TransferableTimelock is a reusable ERC-20 pattern for making newly minted tokens
 temporarily non-burnable while preserving full transferability. This reference
 implementation restricts a minted balance only for the block in which it was
 minted.
@@ -34,7 +34,7 @@ expires it.
 
 ## Integration
 
-`ERC20LiquidTimelock` deliberately does not define a public mint or burn policy.
+`ERC20TransferableTimelock` deliberately does not define a public mint or burn policy.
 Derive from it and expose `_mint` or `_burn` using the authorization appropriate
 for your application:
 
@@ -43,11 +43,11 @@ for your application:
 pragma solidity ^0.8.20;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {ERC20LiquidTimelock} from "./ERC20LiquidTimelock.sol";
+import {ERC20TransferableTimelock} from "./ERC20TransferableTimelock.sol";
 
-contract ExampleToken is ERC20LiquidTimelock, Ownable {
+contract ExampleToken is ERC20TransferableTimelock, Ownable {
     constructor(address initialOwner)
-        ERC20LiquidTimelock("Example Token", "EXAMPLE")
+        ERC20TransferableTimelock("Example Token", "EXAMPLE")
         Ownable(initialOwner)
     {}
 
@@ -83,7 +83,7 @@ restricted receipt safely replaces stale state.
 - Self-transfers preserve both balance and timelock state.
 - A burn may consume unlocked balance while timelocked balance remains.
 - A burn exceeding unlocked capacity reverts with
-  `ERC20InsufficientUnlockedBalance`.
+  `ERC20InsufficientUnlockedBalance(account, unlockedBalance, requestedAmount)`.
 
 ## Limitations
 

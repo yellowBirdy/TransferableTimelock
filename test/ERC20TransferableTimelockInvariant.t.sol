@@ -4,20 +4,20 @@ pragma solidity ^0.8.20;
 import {StdInvariant} from "forge-std/StdInvariant.sol";
 import {Test} from "forge-std/Test.sol";
 
-import {ERC20LiquidTimelockMock} from "./mocks/ERC20LiquidTimelockMock.sol";
-import {ERC20LiquidTimelockHandler} from "./utils/ERC20LiquidTimelockHandler.sol";
+import {ERC20TransferableTimelockMock} from "./mocks/ERC20TransferableTimelockMock.sol";
+import {ERC20TransferableTimelockHandler} from "./utils/ERC20TransferableTimelockHandler.sol";
 
 /**
  * @notice Model-based stateful tests for arbitrary combinations of mints,
  *         transfers, burns, and block advances.
  */
-contract ERC20LiquidTimelockInvariantTest is StdInvariant, Test {
-    ERC20LiquidTimelockMock internal token;
-    ERC20LiquidTimelockHandler internal handler;
+contract ERC20TransferableTimelockInvariantTest is StdInvariant, Test {
+    ERC20TransferableTimelockMock internal token;
+    ERC20TransferableTimelockHandler internal handler;
 
     function setUp() public {
-        token = new ERC20LiquidTimelockMock();
-        handler = new ERC20LiquidTimelockHandler(token);
+        token = new ERC20TransferableTimelockMock();
+        handler = new ERC20TransferableTimelockHandler(token);
 
         bytes4[] memory selectors = new bytes4[](5);
         selectors[0] = handler.mint.selector;

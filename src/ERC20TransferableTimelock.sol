@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 /**
- * @title ERC20LiquidTimelock
+ * @title ERC20TransferableTimelock
  * @notice Makes freshly minted ERC-20 tokens non-burnable for the remainder
  *         of their mint block without restricting transfers.
  * @dev A timelocked balance is an accounting property, not a frozen set of
@@ -20,13 +20,14 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
  *      restricted receipt overwrites stale state, so expiry needs no global
  *      account iteration.
  */
-contract ERC20LiquidTimelock is ERC20 {
+contract ERC20TransferableTimelock is ERC20 {
     /**
      * @notice A burn exceeded an account's currently unlocked balance.
      * @param account Account from which the burn was attempted.
-     * @param missingUnlockedBalance balance to be burned that is timelocked.
+     * @param unlockedBalance Amount currently available to burn.
+     * @param requestedAmount Amount requested to be burned.
      */
-    error ERC20InsufficientUnlockedBalance(address account, uint256 missingUnlockedBalance);
+    error ERC20InsufficientUnlockedBalance(address account, uint256 unlockedBalance, uint256 requestedAmount);
 
     /**
      * @dev Amount recorded as timelocked in `_timelockedAtBlock[account]`.
@@ -95,7 +96,7 @@ contract ERC20LiquidTimelock is ERC20 {
             // Burn: post-burn balance must still cover every timelocked token.
             uint256 touchedTimelockedValue = fromTimelockedBalance - fromPostBurnBalance;
             if (to == address(0)) {
-                revert ERC20InsufficientUnlockedBalance(from, fromTimelockedBalance - fromPostBurnBalance);
+                revert ERC20InsufficientUnlockedBalance(from, value - touchedTimelockedValue, value);
             }
 
             // Transfer

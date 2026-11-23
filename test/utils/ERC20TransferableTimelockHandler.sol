@@ -3,19 +3,19 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 
-import {ERC20LiquidTimelock} from "../../src/ERC20LiquidTimelock.sol";
-import {ERC20LiquidTimelockMock} from "../mocks/ERC20LiquidTimelockMock.sol";
+import {ERC20TransferableTimelock} from "../../src/ERC20TransferableTimelock.sol";
+import {ERC20TransferableTimelockMock} from "../mocks/ERC20TransferableTimelockMock.sol";
 
 /**
  * @notice Stateful fuzz handler with an independent shadow ledger.
  * @dev Every action updates both the token and a deliberately simple model.
  *      Invariants compare the two after arbitrary action sequences.
  */
-contract ERC20LiquidTimelockHandler is Test {
+contract ERC20TransferableTimelockHandler is Test {
     uint256 public constant ACTOR_COUNT = 6;
     uint256 private constant MAX_ACTION_AMOUNT = 1e24;
 
-    ERC20LiquidTimelockMock public immutable token;
+    ERC20TransferableTimelockMock public immutable token;
 
     mapping(address actor => uint256 balance) public modelBalance;
     mapping(address actor => uint256 amount) public modelTimelocked;
@@ -25,7 +25,7 @@ contract ERC20LiquidTimelockHandler is Test {
     uint256 public mintedInCurrentBlock;
     uint256 public rejectedRestrictedBurns;
 
-    constructor(ERC20LiquidTimelockMock token_) {
+    constructor(ERC20TransferableTimelockMock token_) {
         token = token_;
     }
 
@@ -98,7 +98,7 @@ contract ERC20LiquidTimelockHandler is Test {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                ERC20LiquidTimelock.ERC20InsufficientUnlockedBalance.selector, account, unlocked, amount
+                ERC20TransferableTimelock.ERC20InsufficientUnlockedBalance.selector, account, unlocked, amount
             )
         );
         token.burn(account, amount);

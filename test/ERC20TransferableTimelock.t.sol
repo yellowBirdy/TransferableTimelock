@@ -3,11 +3,11 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 
-import {ERC20LiquidTimelock} from "../src/ERC20LiquidTimelock.sol";
-import {ERC20LiquidTimelockMock} from "./mocks/ERC20LiquidTimelockMock.sol";
+import {ERC20TransferableTimelock} from "../src/ERC20TransferableTimelock.sol";
+import {ERC20TransferableTimelockMock} from "./mocks/ERC20TransferableTimelockMock.sol";
 
-contract ERC20LiquidTimelockTest is Test {
-    ERC20LiquidTimelockMock internal token;
+contract ERC20TransferableTimelockTest is Test {
+    ERC20TransferableTimelockMock internal token;
 
     address internal constant ALICE = address(0xA11CE);
     address internal constant BOB = address(0xB0B);
@@ -15,7 +15,7 @@ contract ERC20LiquidTimelockTest is Test {
     address internal constant DAVE = address(0xDA7E);
 
     function setUp() public {
-        token = new ERC20LiquidTimelockMock();
+        token = new ERC20TransferableTimelockMock();
     }
 
     function test_MintRestrictsRecipientRatherThanCaller() public {
@@ -44,7 +44,7 @@ contract ERC20LiquidTimelockTest is Test {
         token.mint(ALICE, 100);
 
         vm.expectRevert(
-            abi.encodeWithSelector(ERC20LiquidTimelock.ERC20InsufficientUnlockedBalance.selector, ALICE, 0, 1)
+            abi.encodeWithSelector(ERC20TransferableTimelock.ERC20InsufficientUnlockedBalance.selector, ALICE, 0, 1)
         );
         token.burn(ALICE, 1);
     }
@@ -153,7 +153,7 @@ contract ERC20LiquidTimelockTest is Test {
         token.burn(BOB, 50);
 
         vm.expectRevert(
-            abi.encodeWithSelector(ERC20LiquidTimelock.ERC20InsufficientUnlockedBalance.selector, BOB, 0, 1)
+            abi.encodeWithSelector(ERC20TransferableTimelock.ERC20InsufficientUnlockedBalance.selector, BOB, 0, 1)
         );
         token.burn(BOB, 1);
 
@@ -240,7 +240,7 @@ contract ERC20LiquidTimelockTest is Test {
         } else {
             vm.expectRevert(
                 abi.encodeWithSelector(
-                    ERC20LiquidTimelock.ERC20InsufficientUnlockedBalance.selector, ALICE, unlocked, burnAmount
+                    ERC20TransferableTimelock.ERC20InsufficientUnlockedBalance.selector, ALICE, unlocked, burnAmount
                 )
             );
             token.burn(ALICE, burnAmount);

@@ -3,8 +3,8 @@ pragma solidity ^0.8.20;
 
 import {ERC20} from "solady/tokens/ERC20.sol";
 
-contract ERC20LiquidTimelockOptimised is ERC20 {
-    error InsufficientUnlockedBalance();
+contract ERC20TransferableTimelockOptimised is ERC20 {
+    error ERC20InsufficientUnlockedBalance(address account, uint256 unlockedBalance, uint256 requestedAmount);
     /// @dev bytes4(keccak256("_TIMELOCKS_SLOT_SEED")
 
     string private _name;
@@ -70,7 +70,10 @@ contract ERC20LiquidTimelockOptimised is ERC20 {
 
         /// @notice burn
         if (to == address(0)) {
-            if (unlockedBalanceOf(from) < amount) revert InsufficientUnlockedBalance();
+            uint256 unlockedBalance = unlockedBalanceOf(from);
+            if (unlockedBalance < amount) {
+                revert ERC20InsufficientUnlockedBalance(from, unlockedBalance, amount);
+            }
             return;
         }
 
