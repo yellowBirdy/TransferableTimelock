@@ -4,19 +4,21 @@ pragma solidity ^0.8.20;
 import {StdInvariant} from "forge-std/StdInvariant.sol";
 import {Test} from "forge-std/Test.sol";
 
+import {IERC20TransferableTimelock} from "./interfaces/IERC20TransferableTimelock.sol";
 import {ERC20TransferableTimelockMock} from "./mocks/ERC20TransferableTimelockMock.sol";
+import {ERC20TransferableTimelockOptimisedMock} from "./mocks/ERC20TransferableTimelockOptimisedMock.sol";
 import {ERC20TransferableTimelockHandler} from "./utils/ERC20TransferableTimelockHandler.sol";
 
 /**
  * @notice Model-based stateful tests for arbitrary combinations of mints,
  *         transfers, burns, and block advances.
  */
-contract ERC20TransferableTimelockInvariantTest is StdInvariant, Test {
-    ERC20TransferableTimelockMock internal token;
+abstract contract ERC20TransferableTimelockInvariantTestBase is StdInvariant, Test {
+    IERC20TransferableTimelock internal token;
     ERC20TransferableTimelockHandler internal handler;
 
     function setUp() public {
-        token = new ERC20TransferableTimelockMock();
+        token = _deployToken();
         handler = new ERC20TransferableTimelockHandler(token);
 
         bytes4[] memory selectors = new bytes4[](5);
@@ -29,6 +31,8 @@ contract ERC20TransferableTimelockInvariantTest is StdInvariant, Test {
         targetContract(address(handler));
         targetSelector(FuzzSelector({addr: address(handler), selectors: selectors}));
     }
+
+    function _deployToken() internal virtual returns (IERC20TransferableTimelock);
 
     /**
      * @dev The implementation must agree account-by-account with the shadow
@@ -90,5 +94,17 @@ contract ERC20TransferableTimelockInvariantTest is StdInvariant, Test {
         }
 
         assertEq(observedUnlocked, token.totalSupply() - handler.modelTotalTimelocked());
+    }
+}
+
+contract ERC20TransferableTimelockInvariantTest is ERC20TransferableTimelockInvariantTestBase {
+    function _deployToken() internal override returns (IERC20TransferableTimelock) {
+        return IERC20TransferableTimelock(address(new ERC20TransferableTimelockMock()));
+    }
+}
+
+contract ERC20TransferableTimelockOptimisedInvariantTest is ERC20TransferableTimelockInvariantTestBase {
+    function _deployToken() internal override returns (IERC20TransferableTimelock) {
+        return IERC20TransferableTimelock(address(new ERC20TransferableTimelockOptimisedMock()));
     }
 }

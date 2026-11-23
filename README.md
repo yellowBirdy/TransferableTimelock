@@ -61,9 +61,10 @@ contract ExampleToken is ERC20TransferableTimelock, Ownable {
 }
 ```
 
-The restriction is enforced in OpenZeppelin ERC-20's `_update` extension point,
-so standard calls to `_mint`, `_transfer`, and `_burn` all pass through the same
-accounting.
+The repository includes OpenZeppelin and Solady implementations with the same
+read API and burn-restriction error. The OpenZeppelin implementation uses
+`_update`; the Optimised Solady implementation uses `_afterTokenTransfer`, so
+Solady validates and updates ERC-20 balances before timelock accounting runs.
 
 ### Read API
 
@@ -92,14 +93,15 @@ restricted receipt safely replaces stale state.
   it does not identify particular token units.
 - Transfers remain intentionally unrestricted, so recipients inherit any
   timelocked portion they receive.
-- A derived contract overriding `_update` must call `super._update` to preserve
-  this behavior.
+- A derived contract overriding the implementation's ERC-20 update hook must
+  call its parent implementation to preserve this behavior.
 - The permissionless mint/burn contract under `test/mocks` is a test harness,
   not a deployment contract.
 
 ## Development
 
-The repository uses Foundry and pins OpenZeppelin Contracts v5.7.0.
+The repository uses Foundry and pins OpenZeppelin Contracts v5.7.0 and Solady
+v0.1.26.
 
 ```shell
 forge install
@@ -114,11 +116,12 @@ Run the larger CI profile with:
 FOUNDRY_PROFILE=ci forge test
 ```
 
-The suite includes deterministic tests, parameterized fuzz tests, and a
-stateful shadow-ledger handler. Invariants cover per-account model agreement,
-global timelocked-balance conservation, total-supply conservation, arbitrary
-transfer chains, splitting and merging, dust, self and zero transfers,
-mint-transfer-burn sequences, repeated same-block receipts, and block expiry.
+The shared suite runs against both implementations and includes deterministic
+tests, parameterized fuzz tests, and a stateful shadow-ledger handler.
+Invariants cover per-account model agreement, global timelocked-balance
+conservation, total-supply conservation, arbitrary transfer chains, splitting
+and merging, dust, self and zero transfers, mint-transfer-burn sequences,
+repeated same-block receipts, block expiry, and canonical overdraft errors.
 
 ## License
 

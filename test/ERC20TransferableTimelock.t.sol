@@ -2,12 +2,15 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
+import {IERC20Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
+import {ERC20 as SoladyERC20} from "solady/tokens/ERC20.sol";
 
-import {ERC20TransferableTimelock} from "../src/ERC20TransferableTimelock.sol";
+import {IERC20TransferableTimelock} from "./interfaces/IERC20TransferableTimelock.sol";
 import {ERC20TransferableTimelockMock} from "./mocks/ERC20TransferableTimelockMock.sol";
+import {ERC20TransferableTimelockOptimisedMock} from "./mocks/ERC20TransferableTimelockOptimisedMock.sol";
 
-contract ERC20TransferableTimelockTest is Test {
-    ERC20TransferableTimelockMock internal token;
+abstract contract ERC20TransferableTimelockTestBase is Test {
+    IERC20TransferableTimelock internal token;
 
     address internal constant ALICE = address(0xA11CE);
     address internal constant BOB = address(0xB0B);
@@ -15,8 +18,12 @@ contract ERC20TransferableTimelockTest is Test {
     address internal constant DAVE = address(0xDA7E);
 
     function setUp() public {
-        token = new ERC20TransferableTimelockMock();
+        token = _deployToken();
     }
+
+    function _deployToken() internal virtual returns (IERC20TransferableTimelock);
+
+    function _expectInsufficientBalance(address account, uint256 balance, uint256 requestedAmount) internal virtual;
 
     function test_MintRestrictsRecipientRatherThanCaller() public {
         token.mint(ALICE, 100);
@@ -44,7 +51,7 @@ contract ERC20TransferableTimelockTest is Test {
         token.mint(ALICE, 100);
 
         vm.expectRevert(
-            abi.encodeWithSelector(ERC20TransferableTimelock.ERC20InsufficientUnlockedBalance.selector, ALICE, 0, 1)
+            abi.encodeWithSelector(IERC20TransferableTimelock.ERC20InsufficientUnlockedBalance.selector, ALICE, 0, 1)
         );
         token.burn(ALICE, 1);
     }
@@ -119,6 +126,27 @@ contract ERC20TransferableTimelockTest is Test {
         assertEq(token.unlockedBalanceOf(ALICE), 0);
     }
 
+    function test_SelfTransferSpendingUnlockedAndTimelockedBalanceDoesNotLowerTimelock() public {
+        token.mint(ALICE, 70);
+        vm.roll(block.number + 1);
+        token.mint(ALICE, 30);
+
+        vm.prank(ALICE);
+        token.transfer(ALICE, 80);
+
+        assertEq(token.balanceOf(ALICE), 100);
+        assertEq(token.timelockedBalanceOf(ALICE), 30);
+        assertEq(token.unlockedBalanceOf(ALICE), 70);
+    }
+
+    function test_TransferOverdraftUsesCanonicalInsufficientBalanceError() public {
+        token.mint(ALICE, 100);
+
+        vm.prank(ALICE);
+        _expectInsufficientBalance(ALICE, 100, 101);
+        token.transfer(BOB, 101);
+    }
+
     function test_ZeroTransferDoesNotChangeEitherAccountTimelock() public {
         token.mint(ALICE, 100);
         token.mint(BOB, 50);
@@ -153,7 +181,7 @@ contract ERC20TransferableTimelockTest is Test {
         token.burn(BOB, 50);
 
         vm.expectRevert(
-            abi.encodeWithSelector(ERC20TransferableTimelock.ERC20InsufficientUnlockedBalance.selector, BOB, 0, 1)
+            abi.encodeWithSelector(IERC20TransferableTimelock.ERC20InsufficientUnlockedBalance.selector, BOB, 0, 1)
         );
         token.burn(BOB, 1);
 
@@ -240,10 +268,32 @@ contract ERC20TransferableTimelockTest is Test {
         } else {
             vm.expectRevert(
                 abi.encodeWithSelector(
-                    ERC20TransferableTimelock.ERC20InsufficientUnlockedBalance.selector, ALICE, unlocked, burnAmount
+                    IERC20TransferableTimelock.ERC20InsufficientUnlockedBalance.selector, ALICE, unlocked, burnAmount
                 )
             );
             token.burn(ALICE, burnAmount);
         }
+    }
+}
+
+contract ERC20TransferableTimelockTest is ERC20TransferableTimelockTestBase {
+    function _deployToken() internal override returns (IERC20TransferableTimelock) {
+        return IERC20TransferableTimelock(address(new ERC20TransferableTimelockMock()));
+    }
+
+    function _expectInsufficientBalance(address account, uint256 balance, uint256 requestedAmount) internal override {
+        vm.expectRevert(
+            abi.encodeWithSelector(IERC20Errors.ERC20InsufficientBalance.selector, account, balance, requestedAmount)
+        );
+    }
+}
+
+contract ERC20TransferableTimelockOptimisedTest is ERC20TransferableTimelockTestBase {
+    function _deployToken() internal override returns (IERC20TransferableTimelock) {
+        return IERC20TransferableTimelock(address(new ERC20TransferableTimelockOptimisedMock()));
+    }
+
+    function _expectInsufficientBalance(address, uint256, uint256) internal override {
+        vm.expectRevert(SoladyERC20.InsufficientBalance.selector);
     }
 }

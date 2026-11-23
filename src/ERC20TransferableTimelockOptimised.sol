@@ -34,8 +34,8 @@ contract ERC20TransferableTimelockOptimised is ERC20 {
     }
 
     function timelockedBalanceOf(address account) public view returns (uint256) {
-        (, uint200 amount) = timelock(account);
-        return uint256(amount);
+        (uint56 lockedAt, uint200 amount) = timelock(account);
+        return lockedAt == block.number ? uint256(amount) : 0;
     }
 
     function unlockedBalanceOf(address account) public view returns (uint256) {
@@ -61,32 +61,25 @@ contract ERC20TransferableTimelockOptimised is ERC20 {
         }
     }
 
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal override {
-        /// @notice mint
+    function _afterTokenTransfer(address from, address to, uint256 amount) internal override {
+        if (amount == 0 || from == to) return;
+
         if (from == address(0)) {
             _increaseTimelock(to, amount);
             return;
         }
 
-        /// @notice burn
-        if (to == address(0)) {
-            uint256 unlockedBalance = unlockedBalanceOf(from);
-            if (unlockedBalance < amount) {
-                revert ERC20InsufficientUnlockedBalance(from, unlockedBalance, amount);
+        uint256 fromTimelockedBalance = timelockedBalanceOf(from);
+        uint256 fromPostTransferBalance = balanceOf(from);
+        if (fromPostTransferBalance < fromTimelockedBalance) {
+            uint256 touchedTimelockedAmount = fromTimelockedBalance - fromPostTransferBalance;
+            if (to == address(0)) {
+                revert ERC20InsufficientUnlockedBalance(from, amount - touchedTimelockedAmount, amount);
             }
-            return;
-        }
 
-        /// @notice transfer
-        uint256 sendersUnlockedBalance = unlockedBalanceOf(from);
-        uint256 sendersTimelockedBalance = timelockedBalanceOf(from);
-        uint256 lockedAmountTransferred;
-        if (amount > sendersUnlockedBalance) {
-            lockedAmountTransferred = amount - sendersUnlockedBalance;
+            _setTimelock(from, fromPostTransferBalance);
+            _increaseTimelock(to, touchedTimelockedAmount);
         }
-        _increaseTimelock(to, lockedAmountTransferred);
-        _setTimelock(from, sendersTimelockedBalance - lockedAmountTransferred);
-        return;
     }
 
     function name() public view override returns (string memory) {
