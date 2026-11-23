@@ -39,7 +39,7 @@ abstract contract ERC20TransferableTimelockTestBase is Test {
         token.mint(ALICE, 40);
 
         vm.prank(ALICE);
-        token.transfer(BOB, 120);
+        assertTrue(token.transfer(BOB, 120));
 
         assertEq(token.timelockedBalanceOf(ALICE), 20);
         assertEq(token.timelockedBalanceOf(BOB), 20);
@@ -73,7 +73,7 @@ abstract contract ERC20TransferableTimelockTestBase is Test {
         token.mint(BOB, 20);
 
         vm.prank(BOB);
-        token.transfer(ALICE, 20);
+        assertTrue(token.transfer(ALICE, 20));
 
         assertEq(token.timelockedBalanceOf(ALICE), 45);
         assertEq(token.timelockedBalanceOf(BOB), 0);
@@ -84,14 +84,14 @@ abstract contract ERC20TransferableTimelockTestBase is Test {
         token.mint(ALICE, 100);
 
         vm.startPrank(ALICE);
-        token.transfer(BOB, 31);
-        token.transfer(CAROL, 69);
+        assertTrue(token.transfer(BOB, 31));
+        assertTrue(token.transfer(CAROL, 69));
         vm.stopPrank();
 
         vm.prank(BOB);
-        token.transfer(DAVE, 31);
+        assertTrue(token.transfer(DAVE, 31));
         vm.prank(CAROL);
-        token.transfer(DAVE, 69);
+        assertTrue(token.transfer(DAVE, 69));
 
         assertEq(token.timelockedBalanceOf(ALICE), 0);
         assertEq(token.timelockedBalanceOf(BOB), 0);
@@ -103,11 +103,11 @@ abstract contract ERC20TransferableTimelockTestBase is Test {
         token.mint(ALICE, 100);
 
         vm.prank(ALICE);
-        token.transfer(BOB, 1);
+        assertTrue(token.transfer(BOB, 1));
         vm.prank(BOB);
-        token.transfer(CAROL, 1);
+        assertTrue(token.transfer(CAROL, 1));
         vm.prank(CAROL);
-        token.transfer(DAVE, 1);
+        assertTrue(token.transfer(DAVE, 1));
 
         assertEq(token.timelockedBalanceOf(ALICE), 99);
         assertEq(token.timelockedBalanceOf(BOB), 0);
@@ -119,7 +119,7 @@ abstract contract ERC20TransferableTimelockTestBase is Test {
         token.mint(ALICE, 100);
 
         vm.prank(ALICE);
-        token.transfer(ALICE, 60);
+        assertTrue(token.transfer(ALICE, 60));
 
         assertEq(token.balanceOf(ALICE), 100);
         assertEq(token.timelockedBalanceOf(ALICE), 100);
@@ -132,7 +132,7 @@ abstract contract ERC20TransferableTimelockTestBase is Test {
         token.mint(ALICE, 30);
 
         vm.prank(ALICE);
-        token.transfer(ALICE, 80);
+        assertTrue(token.transfer(ALICE, 80));
 
         assertEq(token.balanceOf(ALICE), 100);
         assertEq(token.timelockedBalanceOf(ALICE), 30);
@@ -144,6 +144,7 @@ abstract contract ERC20TransferableTimelockTestBase is Test {
 
         vm.prank(ALICE);
         _expectInsufficientBalance(ALICE, 100, 101);
+        // forge-lint: disable-next-line(erc20-unchecked-transfer)
         token.transfer(BOB, 101);
     }
 
@@ -152,7 +153,7 @@ abstract contract ERC20TransferableTimelockTestBase is Test {
         token.mint(BOB, 50);
 
         vm.prank(ALICE);
-        token.transfer(BOB, 0);
+        assertTrue(token.transfer(BOB, 0));
 
         assertEq(token.timelockedBalanceOf(ALICE), 100);
         assertEq(token.timelockedBalanceOf(BOB), 50);
@@ -172,7 +173,7 @@ abstract contract ERC20TransferableTimelockTestBase is Test {
         token.mint(ALICE, 30);
 
         vm.prank(ALICE);
-        token.transfer(BOB, 60);
+        assertTrue(token.transfer(BOB, 60));
 
         assertEq(token.timelockedBalanceOf(ALICE), 20);
         assertEq(token.timelockedBalanceOf(BOB), 10);
@@ -199,7 +200,7 @@ abstract contract ERC20TransferableTimelockTestBase is Test {
 
         for (uint256 i; i < hops; ++i) {
             vm.prank(actors[i]);
-            token.transfer(actors[i + 1], amount);
+            assertTrue(token.transfer(actors[i + 1], amount));
 
             assertEq(token.timelockedBalanceOf(actors[i]), 0);
             assertEq(token.timelockedBalanceOf(actors[i + 1]), amount);
@@ -214,14 +215,14 @@ abstract contract ERC20TransferableTimelockTestBase is Test {
         token.mint(ALICE, total);
 
         vm.startPrank(ALICE);
-        token.transfer(BOB, first);
-        token.transfer(CAROL, second);
+        assertTrue(token.transfer(BOB, first));
+        assertTrue(token.transfer(CAROL, second));
         vm.stopPrank();
 
         vm.prank(BOB);
-        token.transfer(DAVE, first);
+        assertTrue(token.transfer(DAVE, first));
         vm.prank(CAROL);
-        token.transfer(DAVE, second);
+        assertTrue(token.transfer(DAVE, second));
 
         assertEq(token.timelockedBalanceOf(DAVE), total);
         assertEq(token.balanceOf(DAVE), total);
@@ -242,7 +243,7 @@ abstract contract ERC20TransferableTimelockTestBase is Test {
         token.mint(ALICE, restricted);
 
         vm.prank(ALICE);
-        token.transfer(BOB, transferAmount);
+        assertTrue(token.transfer(BOB, transferAmount));
 
         uint256 expectedMoved = transferAmount > unlocked ? transferAmount - unlocked : 0;
         assertEq(token.timelockedBalanceOf(BOB), expectedMoved);

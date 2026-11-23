@@ -18,9 +18,9 @@ contract ERC20TransferableTimelockOptimised is ERC20 {
     ///     let timelockSlot := keccak256(0x0c, 0x20)
     /// ```
 
-    constructor(string memory name, string memory symbol) {
-        _name = name;
-        _symbol = symbol;
+    constructor(string memory name_, string memory symbol_) {
+        _name = name_;
+        _symbol = symbol_;
     }
 
     function timelock(address account) public view returns (uint56 lockedAt, uint200 amount) {

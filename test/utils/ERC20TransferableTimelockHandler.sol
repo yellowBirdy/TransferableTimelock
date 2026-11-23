@@ -14,7 +14,7 @@ contract ERC20TransferableTimelockHandler is Test {
     uint256 public constant ACTOR_COUNT = 6;
     uint256 private constant MAX_ACTION_AMOUNT = 1e24;
 
-    IERC20TransferableTimelock public immutable token;
+    IERC20TransferableTimelock public immutable TOKEN;
 
     mapping(address actor => uint256 balance) public modelBalance;
     mapping(address actor => uint256 amount) public modelTimelocked;
@@ -25,7 +25,7 @@ contract ERC20TransferableTimelockHandler is Test {
     uint256 public rejectedRestrictedBurns;
 
     constructor(IERC20TransferableTimelock token_) {
-        token = token_;
+        TOKEN = token_;
     }
 
     /**
@@ -35,7 +35,7 @@ contract ERC20TransferableTimelockHandler is Test {
         address account = actorAt(actorSeed);
         uint256 amount = bound(rawAmount, 0, MAX_ACTION_AMOUNT);
 
-        token.mint(account, amount);
+        TOKEN.mint(account, amount);
 
         modelBalance[account] += amount;
         modelTimelocked[account] += amount;
@@ -54,7 +54,7 @@ contract ERC20TransferableTimelockHandler is Test {
         uint256 amount = bound(rawAmount, 0, modelBalance[from]);
 
         vm.prank(from);
-        bool success = token.transfer(to, amount);
+        bool success = TOKEN.transfer(to, amount);
         assertTrue(success);
 
         if (from == to) return;
@@ -76,7 +76,7 @@ contract ERC20TransferableTimelockHandler is Test {
         uint256 unlocked = modelBalance[account] - modelTimelocked[account];
         uint256 amount = bound(rawAmount, 0, unlocked);
 
-        token.burn(account, amount);
+        TOKEN.burn(account, amount);
 
         modelBalance[account] -= amount;
         modelTotalSupply -= amount;
@@ -100,7 +100,7 @@ contract ERC20TransferableTimelockHandler is Test {
                 IERC20TransferableTimelock.ERC20InsufficientUnlockedBalance.selector, account, unlocked, amount
             )
         );
-        token.burn(account, amount);
+        TOKEN.burn(account, amount);
         ++rejectedRestrictedBurns;
     }
 
